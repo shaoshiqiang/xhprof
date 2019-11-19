@@ -107,7 +107,7 @@ function xhprof_generate_image_by_dot($dot_script, $type) {
         2 => array("pipe", "w")
     );
 
-    $cmd = "/usr/local/bin/dot -T".$type;
+    $cmd = "/home/linuxbrew/.linuxbrew/bin/dot -T".$type;
 
     $process = proc_open( $cmd, $descriptorspec, $pipes, sys_get_temp_dir(), array( 'PATH' => getenv( 'PATH' ) ) );
     if (is_resource($process)) {
@@ -118,8 +118,8 @@ function xhprof_generate_image_by_dot($dot_script, $type) {
 
         $err = stream_get_contents($pipes[2]);
         if (!empty($err)) {
-            print "failed to execute cmd: \"$cmd\". stderr: `$err'\n";
-            exit;
+//            print "failed to execute cmd: \"$cmd\". stderr: `$err'\n";
+//            exit;
         }
 
         fclose($pipes[2]);
