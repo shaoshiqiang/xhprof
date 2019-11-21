@@ -2,8 +2,8 @@
 $server = $_SERVER;
 
 if (strpos($server['SERVER_NAME'], 'xhprof') === false) {
-    include_once "/home/shaoshiqiang/WWW/xhprof/xhprof_lib/utils/xhprof_lib.php";
-    include_once "/home/shaoshiqiang/WWW/xhprof/xhprof_lib/utils/xhprof_runs.php";
+    include_once "/Users/shaoshiqiang/WWW/xhprof/xhprof_lib/utils/xhprof_lib.php";
+    include_once "/Users/shaoshiqiang/WWW/xhprof/xhprof_lib/utils/xhprof_runs.php";
     xhprof_enable();
     //在程序结束后收集数据
     register_shutdown_function(function ($server) {
