@@ -1,7 +1,7 @@
 <?php
 $server = $_SERVER;
 
-if (strpos($server['SERVER_NAME'], 'xhprof') === false) {
+if (isset($server['SERVER_NAME']) && strpos($server['SERVER_NAME'], 'xhprof') === false) {
     include_once "D:/WWW/xhprof/xhprof_lib/utils/xhprof_lib.php";
     include_once "D:/WWW/xhprof/xhprof_lib/utils/xhprof_runs.php";
     xhprof_enable();
