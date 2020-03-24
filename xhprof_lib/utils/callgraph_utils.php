@@ -26,7 +26,7 @@ $xhprof_legal_image_types = array(
     "gif" => 1,
     "png" => 1,
     "svg" => 1, // support scalable vector graphic
-    "ps"  => 1,
+    "ps" => 1,
 );
 
 /**
@@ -50,7 +50,7 @@ function xhprof_http_header($name, $value) {
         xhprof_error('http_header value not a string');
     }
 
-    header($name.': '.$value, true);
+    header($name . ': ' . $value, true);
 }
 
 /**
@@ -113,7 +113,7 @@ function xhprof_generate_image_by_dot($dot_script, $type) {
         $cmd = "/home/linuxbrew/.linuxbrew/bin/dot -T" . $type;
     }
 
-    $process = proc_open( $cmd, $descriptorspec, $pipes, sys_get_temp_dir(), array( 'PATH' => getenv( 'PATH' ) ) );
+    $process = proc_open($cmd, $descriptorspec, $pipes, sys_get_temp_dir(), array('PATH' => getenv('PATH')));
     if (is_resource($process)) {
         fwrite($pipes[0], $dot_script);
         fclose($pipes[0]);
@@ -169,8 +169,8 @@ function xhprof_get_children_table($raw_data) {
  * @author cjiang
  */
 function xhprof_generate_dot_script($raw_data, $threshold, $source, $page,
-                                    $func, $critical_path, $right=null,
-                                    $left=null) {
+                                    $func, $critical_path, $right = null,
+                                    $left = null) {
 
     $max_width = 5;
     $max_height = 3.5;
@@ -257,7 +257,8 @@ function xhprof_generate_dot_script($raw_data, $threshold, $source, $page,
     // also assign a unique integer id for each function to be generated. In the
     // meantime, find the function with the most exclusive time (potentially the
     // performance bottleneck).
-    $cur_id = 0; $max_wt = 0;
+    $cur_id = 0;
+    $max_wt = 0;
     foreach ($sym_table as $symbol => $info) {
         if (empty($func) && abs($info["wt"] / $totals["wt"]) < $threshold) {
             unset($sym_table[$symbol]);
@@ -267,7 +268,7 @@ function xhprof_generate_dot_script($raw_data, $threshold, $source, $page,
             $max_wt = abs($info["excl_wt"]);
         }
         $sym_table[$symbol]["id"] = $cur_id;
-        $cur_id ++;
+        $cur_id++;
     }
 
     // Generate all nodes' information.
@@ -275,7 +276,7 @@ function xhprof_generate_dot_script($raw_data, $threshold, $source, $page,
         if ($info["excl_wt"] == 0) {
             $sizing_factor = $max_sizing_ratio;
         } else {
-            $sizing_factor = $max_wt / abs($info["excl_wt"]) ;
+            $sizing_factor = $max_wt / abs($info["excl_wt"]);
             if ($sizing_factor > $max_sizing_ratio) {
                 $sizing_factor = $max_sizing_ratio;
             }
@@ -291,64 +292,64 @@ function xhprof_generate_dot_script($raw_data, $threshold, $source, $page,
         }
 
         $fontsize = ", fontsize="
-            .(int)($max_fontsize / (($sizing_factor - 1) / 10 + 1));
+            . (int)($max_fontsize / (($sizing_factor - 1) / 10 + 1));
 
-        $width = ", width=".sprintf("%.1f", $max_width / $sizing_factor);
-        $height = ", height=".sprintf("%.1f", $max_height / $sizing_factor);
+        $width = ", width=" . sprintf("%.1f", $max_width / $sizing_factor);
+        $height = ", height=" . sprintf("%.1f", $max_height / $sizing_factor);
 
         if ($symbol == "main()") {
             $shape = "octagon";
-            $name = "Total: ".($totals["wt"] / 1000000.0)." ms\\n";
+            $name = "Total: " . ($totals["wt"] / 1000000.0) . " ms\\n";
             $name .= addslashes(isset($page) ? $page : $symbol);
         } else {
             $shape = "box";
-            $name = addslashes($symbol)."\\nInc: ". sprintf("%.3f",$info["wt"] / 1000000) .
-                " ms (" . sprintf("%.1f%%", 100 * $info["wt"] / $totals["wt"]).")";
+            $name = addslashes($symbol) . "\\nInc: " . sprintf("%.3f", $info["wt"] / 1000000) .
+                " ms (" . sprintf("%.1f%%", 100 * $info["wt"] / $totals["wt"]) . ")";
         }
         if ($left === null) {
-            $label = ", label=\"".$name."\\nExcl: "
-                .(sprintf("%.3f",$info["excl_wt"] / 1000000.0))." ms ("
-                .sprintf("%.1f%%", 100 * $info["excl_wt"] / $totals["wt"])
-                . ")\\n".$info["ct"]." total calls\"";
+            $label = ", label=\"" . $name . "\\nExcl: "
+                . (sprintf("%.3f", $info["excl_wt"] / 1000000.0)) . " ms ("
+                . sprintf("%.1f%%", 100 * $info["excl_wt"] / $totals["wt"])
+                . ")\\n" . $info["ct"] . " total calls\"";
         } else {
             if (isset($left[$symbol]) && isset($right[$symbol])) {
-                $label = ", label=\"".addslashes($symbol).
-                    "\\nInc: ".(sprintf("%.3f",$left[$symbol]["wt"] / 1000000.0))
-                    ." ms - "
-                    .(sprintf("%.3f",$right[$symbol]["wt"] / 1000000.0))." ms = "
-                    .(sprintf("%.3f",$info["wt"] / 1000000.0))." ms".
+                $label = ", label=\"" . addslashes($symbol) .
+                    "\\nInc: " . (sprintf("%.3f", $left[$symbol]["wt"] / 1000000.0))
+                    . " ms - "
+                    . (sprintf("%.3f", $right[$symbol]["wt"] / 1000000.0)) . " ms = "
+                    . (sprintf("%.3f", $info["wt"] / 1000000.0)) . " ms" .
                     "\\nExcl: "
-                    .(sprintf("%.3f",$left[$symbol]["excl_wt"] / 1000000.0))
-                    ." ms - ".(sprintf("%.3f",$right[$symbol]["excl_wt"] / 1000000.0))
-                    ." ms = ".(sprintf("%.3f",$info["excl_wt"] / 1000000.0))." ms".
-                    "\\nCalls: ".(sprintf("%.3f",$left[$symbol]["ct"]))." - "
-                    .(sprintf("%.3f",$right[$symbol]["ct"]))." = "
-                    .(sprintf("%.3f",$info["ct"]))."\"";
+                    . (sprintf("%.3f", $left[$symbol]["excl_wt"] / 1000000.0))
+                    . " ms - " . (sprintf("%.3f", $right[$symbol]["excl_wt"] / 1000000.0))
+                    . " ms = " . (sprintf("%.3f", $info["excl_wt"] / 1000000.0)) . " ms" .
+                    "\\nCalls: " . (sprintf("%.3f", $left[$symbol]["ct"])) . " - "
+                    . (sprintf("%.3f", $right[$symbol]["ct"])) . " = "
+                    . (sprintf("%.3f", $info["ct"])) . "\"";
             } else if (isset($left[$symbol])) {
-                $label = ", label=\"".addslashes($symbol).
-                    "\\nInc: ".(sprintf("%.3f",$left[$symbol]["wt"] / 1000000.0))
-                    ." ms - 0 ms = ".(sprintf("%.3f",$info["wt"] / 1000000.0))
-                    ." ms"."\\nExcl: "
-                    .(sprintf("%.3f",$left[$symbol]["excl_wt"] / 1000000.0))
-                    ." ms - 0 ms = "
-                    .(sprintf("%.3f",$info["excl_wt"] / 1000000.0))." ms".
-                    "\\nCalls: ".(sprintf("%.3f",$left[$symbol]["ct"]))." - 0 = "
-                    .(sprintf("%.3f",$info["ct"]))."\"";
+                $label = ", label=\"" . addslashes($symbol) .
+                    "\\nInc: " . (sprintf("%.3f", $left[$symbol]["wt"] / 1000000.0))
+                    . " ms - 0 ms = " . (sprintf("%.3f", $info["wt"] / 1000000.0))
+                    . " ms" . "\\nExcl: "
+                    . (sprintf("%.3f", $left[$symbol]["excl_wt"] / 1000000.0))
+                    . " ms - 0 ms = "
+                    . (sprintf("%.3f", $info["excl_wt"] / 1000000.0)) . " ms" .
+                    "\\nCalls: " . (sprintf("%.3f", $left[$symbol]["ct"])) . " - 0 = "
+                    . (sprintf("%.3f", $info["ct"])) . "\"";
             } else {
-                $label = ", label=\"".addslashes($symbol).
+                $label = ", label=\"" . addslashes($symbol) .
                     "\\nInc: 0 ms - "
-                    .(sprintf("%.3f",$right[$symbol]["wt"] / 1000000.0))
-                    ." ms = ".(sprintf("%.3f",$info["wt"] / 1000000.0))." ms".
+                    . (sprintf("%.3f", $right[$symbol]["wt"] / 1000000.0))
+                    . " ms = " . (sprintf("%.3f", $info["wt"] / 1000000.0)) . " ms" .
                     "\\nExcl: 0 ms - "
-                    .(sprintf("%.3f",$right[$symbol]["excl_wt"] / 1000000.0))
-                    ." ms = ".(sprintf("%.3f",$info["excl_wt"] / 1000000.0))." ms".
-                    "\\nCalls: 0 - ".(sprintf("%.3f",$right[$symbol]["ct"]))
-                    ." = ".(sprintf("%.3f",$info["ct"]))."\"";
+                    . (sprintf("%.3f", $right[$symbol]["excl_wt"] / 1000000.0))
+                    . " ms = " . (sprintf("%.3f", $info["excl_wt"] / 1000000.0)) . " ms" .
+                    "\\nCalls: 0 - " . (sprintf("%.3f", $right[$symbol]["ct"]))
+                    . " = " . (sprintf("%.3f", $info["ct"])) . "\"";
             }
         }
         $result .= "N" . $sym_table[$symbol]["id"];
-        $result .= "[shape=$shape ".$label.$width
-            .$height.$fontsize.$fillcolor."];\n";
+        $result .= "[shape=$shape " . $label . $width
+            . $height . $fontsize . $fillcolor . "];\n";
     }
 
     // Generate all the edges' information.
@@ -359,7 +360,7 @@ function xhprof_generate_dot_script($raw_data, $threshold, $source, $page,
             (empty($func) ||
                 (!empty($func) && ($parent == $func || $child == $func)))) {
 
-            $label = $info["ct"] == 1 ? $info["ct"]." call" : $info["ct"]." calls";
+            $label = $info["ct"] == 1 ? $info["ct"] . " call" : $info["ct"] . " calls";
 
             $headlabel = $sym_table[$child]["wt"] > 0 ?
                 sprintf("%.1f%%", 100 * $info["wt"]
@@ -377,15 +378,16 @@ function xhprof_generate_dot_script($raw_data, $threshold, $source, $page,
 
             if ($critical_path &&
                 isset($path_edges[xhprof_build_parent_child_key($parent, $child)])) {
-                $linewidth = 10; $arrow_size = 2;
+                $linewidth = 10;
+                $arrow_size = 2;
             }
 
             $result .= "N" . $sym_table[$parent]["id"] . " -> N"
                 . $sym_table[$child]["id"];
             $result .= "[arrowsize=$arrow_size, color=grey, style=\"setlinewidth($linewidth)\","
-                ." label=\""
-                .$label."\", headlabel=\"".$headlabel
-                ."\", taillabel=\"".$taillabel."\" ]";
+                . " label=\""
+                . $label . "\", headlabel=\"" . $headlabel
+                . "\", taillabel=\"" . $taillabel . "\" ]";
             $result .= ";\n";
 
         }
@@ -395,8 +397,8 @@ function xhprof_generate_dot_script($raw_data, $threshold, $source, $page,
     return $result;
 }
 
-function  xhprof_render_diff_image($xhprof_runs_impl, $run1, $run2,
-                                   $type, $threshold, $source) {
+function xhprof_render_diff_image($xhprof_runs_impl, $run1, $run2,
+                                  $type, $threshold, $source) {
     $total1;
     $total2;
 
@@ -421,7 +423,7 @@ function  xhprof_render_diff_image($xhprof_runs_impl, $run1, $run2,
 /**
  * Generate image content from phprof run id.
  *
- * @param object  $xhprof_runs_impl  An object that implements
+ * @param object $xhprof_runs_impl An object that implements
  *                                   the iXHProfRuns interface
  * @param run_id, integer, the unique id for the phprof run, this is the
  *                primary key for phprof database table.
@@ -458,7 +460,7 @@ function xhprof_get_content_by_run($xhprof_runs_impl, $run_id, $type,
 /**
  * Generate image from phprof run id and send it to client.
  *
- * @param object  $xhprof_runs_impl  An object that implements
+ * @param object $xhprof_runs_impl An object that implements
  *                                   the iXHProfRuns interface
  * @param run_id, integer, the unique id for the phprof run, this is the
  *                primary key for phprof database table.
@@ -479,9 +481,9 @@ function xhprof_render_image($xhprof_runs_impl, $run_id, $type, $threshold,
         $threshold,
         $func, $source, $critical_path);
     if (!$content) {
-        print "Error: either we can not find profile data for run_id ".$run_id
-            ." or the threshold ".$threshold." is too small or you do not"
-            ." have 'dot' image generation utility installed.";
+        print "Error: either we can not find profile data for run_id " . $run_id
+            . " or the threshold " . $threshold . " is too small or you do not"
+            . " have 'dot' image generation utility installed.";
         exit();
     }
 

@@ -4,7 +4,7 @@
 // Profile a CLI script.
 
 if ($argc < 2) {
-  throw new Exception('usage: xhprofile <script>');
+    throw new Exception('usage: xhprofile <script>');
 }
 
 $__xhprof_target__ = $argv[1];
