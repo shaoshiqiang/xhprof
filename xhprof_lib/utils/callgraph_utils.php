@@ -107,7 +107,11 @@ function xhprof_generate_image_by_dot($dot_script, $type) {
         2 => array("pipe", "w")
     );
 
-    $cmd = "/home/linuxbrew/.linuxbrew/bin/dot -T".$type;
+    if (PHP_OS == 'Darwin') {
+        $cmd = "/usr/local/bin/dot -T" . $type;
+    } else {
+        $cmd = "/home/linuxbrew/.linuxbrew/bin/dot -T" . $type;
+    }
 
     $process = proc_open( $cmd, $descriptorspec, $pipes, sys_get_temp_dir(), array( 'PATH' => getenv( 'PATH' ) ) );
     if (is_resource($process)) {
