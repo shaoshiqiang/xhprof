@@ -39,7 +39,9 @@ extern zend_module_entry xhprof_module_entry;
  */
 
 /* XHProf version                           */
-#define XHPROF_VERSION       "2.1.0"
+#define XHPROF_VERSION       "2.2.0"
+
+#define XHPROF_FUNC_HASH_COUNTERS_SIZE   1024
 
 /* Fictitious function name to represent top of the call tree. The paranthesis
  * in the name is to ensure we don't conflict with user function names.  */
@@ -69,12 +71,6 @@ extern zend_module_entry xhprof_module_entry;
 
 /* Constant for ignoring functions, transparent to hierarchical profile */
 #define XHPROF_MAX_IGNORED_FUNCTIONS  256
-#define XHPROF_IGNORED_FUNCTION_FILTER_SIZE                           \
-               ((XHPROF_MAX_IGNORED_FUNCTIONS + 7)/8)
-
-#if !defined(uint64)
-    typedef unsigned long long uint64;
-#endif
 
 #if !defined(uint32)
     typedef unsigned int uint32;
@@ -94,15 +90,15 @@ extern zend_module_entry xhprof_module_entry;
  */
 #define BEGIN_PROFILING(entries, symbol, profile_curr, execute_data)        \
 do {                                                                     \
-    /* Use a hash code to filter most of the string comparisons. */     \
-    uint8 hash_code  = hp_inline_hash(symbol);                          \
+    /* Use a hash code for zend_string. */     \
+    zend_ulong hash_code = ZSTR_HASH(symbol);                          \
     profile_curr = !hp_ignore_entry_work(hash_code, symbol);                 \
     if (profile_curr) {                                                 \
         if (execute_data != NULL) {                                     \
             symbol = hp_get_trace_callback(symbol, execute_data); \
         }                                                               \
         hp_entry_t *cur_entry = hp_fast_alloc_hprof_entry();            \
-        (cur_entry)->hash_code = hash_code;                             \
+        (cur_entry)->hash_code = hash_code % XHPROF_FUNC_HASH_COUNTERS_SIZE;  \
         (cur_entry)->name_hprof = symbol;                               \
         (cur_entry)->prev_hprof = (*(entries));                         \
         /* Call the universal callback */                               \
@@ -152,22 +148,22 @@ do {                                                                    \
  * profile operation, recursion depth, and the name of the function being
  * profiled. */
 typedef struct hp_entry_t {
-    char                   *name_hprof;                       /* function name */
+    struct hp_entry_t      *prev_hprof;    /* ptr to prev entry being profiled */
+    zend_string            *name_hprof;                       /* function name */
     int                     rlvl_hprof;        /* recursion level for function */
-    uint64                  tsc_start;         /* start value for TSC counter  */
-    uint64                  cpu_start;
     long int                mu_start_hprof;                    /* memory usage */
     long int                pmu_start_hprof;              /* peak memory usage */
-    struct hp_entry_t      *prev_hprof;    /* ptr to prev entry being profiled */
-    uint8                   hash_code;     /* hash_code for the function name  */
+    zend_ulong              tsc_start;         /* start value for TSC counter  */
+    zend_ulong              cpu_start;
+    zend_ulong              hash_code;     /* hash_code for the function name  */
 } hp_entry_t;
 
 typedef struct hp_ignored_functions {
-    char **names;
-    uint8 filter[XHPROF_MAX_IGNORED_FUNCTIONS];
+    zend_string **names;
+    zend_ulong filter[XHPROF_MAX_IGNORED_FUNCTIONS];
 } hp_ignored_functions;
 
-typedef char* (*hp_trace_callback) (char *symbol, zend_execute_data *data);
+typedef zend_string* (*hp_trace_callback) (zend_string *symbol, zend_execute_data *data);
 
 /* Various types for XHPROF callbacks       */
 typedef void (*hp_init_cb)           ();
@@ -203,28 +199,28 @@ ZEND_DLEXPORT zend_op_array* hp_compile_string(zval *source_string, char *filena
  */
 static void hp_register_constants(INIT_FUNC_ARGS);
 
-static void hp_begin(long level, long xhprof_flags);
+static void hp_begin(zend_long level, zend_long xhprof_flags);
 static void hp_stop();
 static void hp_end();
 
-static inline uint64 cycle_timer();
+static inline zend_ulong cycle_timer();
 
 static void hp_free_the_free_list();
 static hp_entry_t *hp_fast_alloc_hprof_entry();
 static void hp_fast_free_hprof_entry(hp_entry_t *p);
-static inline uint8 hp_inline_hash(char *str);
-static void incr_us_interval(struct timeval *start, uint64 incr);
+
+static void incr_us_interval(struct timeval *start, zend_ulong incr);
 
 static void hp_get_ignored_functions_from_arg(zval *args);
 
-static inline zval *hp_zval_at_key(char *key, zval *values);
-static inline char **hp_strings_in_zval(zval *values);
-static inline void hp_array_del(char **name_array);
+static inline void hp_array_del(zend_string **names);
 
-char *hp_get_trace_callback(char *symbol, zend_execute_data *data);
+zend_string *hp_get_trace_callback(zend_string *symbol, zend_execute_data *data);
 void hp_init_trace_callbacks();
 
-hp_ignored_functions *hp_ignored_functions_init(char **names);
+double get_timebase_conversion();
+
+hp_ignored_functions *hp_ignored_functions_init(zval *values);
 
 /* Struct to hold the various callbacks for a single xhprof mode */
 typedef struct hp_mode_cb {
@@ -268,23 +264,27 @@ ZEND_BEGIN_MODULE_GLOBALS(xhprof)
 
     /* Global to track the time of the last sample in time and ticks */
     struct timeval   last_sample_time;
-    uint64           last_sample_tsc;
+    zend_ulong       last_sample_tsc;
     /* XHPROF_SAMPLING_INTERVAL in ticks */
-    long             sampling_interval;
-    uint64           sampling_interval_tsc;
-    int              sampling_depth;
+    zend_long        sampling_interval;
+    zend_ulong       sampling_interval_tsc;
+    zend_long        sampling_depth;
     /* XHProf flags */
     uint32 xhprof_flags;
 
-    char *root;
+    zend_string *root;
 
     /* counter table indexed by hash value of function names. */
-    uint8  func_hash_counters[256];
+    zend_ulong func_hash_counters[XHPROF_FUNC_HASH_COUNTERS_SIZE];
 
     HashTable *trace_callbacks;
 
     /* Table of ignored function names and their filter */
     hp_ignored_functions *ignored_functions;
+
+    double timebase_conversion;
+
+    zend_bool collect_additional_info;
 
 ZEND_END_MODULE_GLOBALS(xhprof)
 

@@ -10,6 +10,7 @@ This version supports PHP7
 - 7.1
 - 7.2
 - 7.3
+- 7.4
 
 # Installation
 ```
@@ -36,6 +37,37 @@ xhprof.output_dir = /tmp/xhprof
 |xhprof.collect_additional_info  | 0 | >= v2.1 | Collect mysql_query, curl_exec internal info. The default is 0. Open value is 1|
 
 # Turn on extra collection
+#### php.ini adds xhprof.collect_additional_info
+```sh
+xhprof.collect_additional_info = 1
+````
+# Options
+```php
+xhprof_enable(XHPROF_FLAGS_NO_BUILTINS | XHPROF_FLAGS_CPU | XHPROF_FLAGS_MEMORY);
+```
+- `XHPROF_FLAGS_NO_BUILTINS` do not profile builtins
+- `XHPROF_FLAGS_CPU` gather CPU times for funcs
+- `XHPROF_FLAGS_MEMORY` gather memory usage for funcs
+
+Example
+```php
+<?php
+
+array(
+    "main()" => array(
+        "wt" => 237,
+        "ct" => 1,
+        "cpu" => 100,
+    )
+)
+```
+
+- `wt` The number of times the function was called
+- `ct` The execution time of a function method is time consuming
+- `cpu` The CPU time consumed by the function method execution
+- `mu` Memory used by function methods. The call is zend_memory_usage to get the memory usage
+- `pmu` Peak memory used by the function method. The call is zend_memory_peak_usage to get the memory
+
 ### PDO::exec
 ### PDO::query
 ### mysqli_query
@@ -76,3 +108,6 @@ curl_close($ch);
 ```
 curl_exec#http://www.baidu.com
 ```
+
+## PECL Repository
+[![pecl](resource/pecl.png)](https://pecl.php.net/package/xhprof)
