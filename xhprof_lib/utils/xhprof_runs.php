@@ -146,24 +146,26 @@ class XHProfRuns_Default implements iXHProfRuns {
     return $run_id;
   }
 
-  function list_runs() {
-    if (is_dir($this->dir)) {
-        echo "<hr/>Existing runs:\n<ul>\n";
-        $files = glob("{$this->dir}/*.{$this->suffix}");
-		usort($files, function($a, $b) {return filemtime($b) - filemtime($a);});
-        $possible_metrics = xhprof_get_possible_metrics();
-        foreach ($files as $file) {
-            list($run,$source) = explode('.', basename($file));
-            $contents = file_get_contents($file);
-            $return =  unserialize($contents);
-            echo '<li><a href="' . htmlentities($_SERVER['SCRIPT_NAME'])
-                . '?run=' . htmlentities($run) . '&source='
-                . htmlentities($source) . '">'
-                . htmlentities(basename($file)) . "</a><small> "
-                . date("Y-m-d H:i:s", filemtime($file)) . " </small> "
-                . " <pre style='float: right;'> " .number_format( $return['main()']['wt'] ) . ' ' .$possible_metrics['wt'][1] . " </pre></li>\n";
+    function list_runs() {
+        if (is_dir($this->dir)) {
+            echo "<hr/>Existing runs:\n<ul>\n";
+            $files = glob("{$this->dir}/*.{$this->suffix}");
+            usort($files, function ($a, $b) {
+                return filemtime($b) - filemtime($a);
+            });
+            $possible_metrics = xhprof_get_possible_metrics();
+            foreach ($files as $file) {
+                list($run, $source) = explode('.', basename($file));
+                $contents = file_get_contents($file);
+                $return = unserialize($contents);
+                echo '<li><b style="display: inline-block; text-align: right; width: 190px;"> ' . number_format($return['main()']['wt']) . ' ' . $possible_metrics['wt'][1] . ' </b> '
+                    . ' <a href="' . htmlentities($_SERVER['SCRIPT_NAME'])
+                    . '?run=' . htmlentities($run) . '&source='
+                    . htmlentities($source) . '">'
+                    . htmlentities(basename($file)) . "</a><small> "
+                    . date("Y-m-d H:i:s", filemtime($file)) . " </small></li>\n";
+            }
+            echo "</ul>\n";
         }
-        echo "</ul>\n";
     }
-  }
 }
