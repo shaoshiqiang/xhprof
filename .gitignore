@@ -14,4 +14,4 @@ extension/tests/*.php
 
 support/libxhprof/.phutil_module_cache
 /.idea/
-xhprof_tmp/*.xhprof
+xhprof_tmp/*/*.xhprof
