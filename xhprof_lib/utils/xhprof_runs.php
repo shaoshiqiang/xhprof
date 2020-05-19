@@ -95,7 +95,7 @@ class XHProfRuns_Default implements iXHProfRuns {
             $dir = ini_get("xhprof.output_dir");
             $base_name = $_GET['dir'] ?? '';
             if(!$base_name){
-                $date = date('Y-m-d_H:i', time());
+                $date = date('Y-m-d_H-i', time());
                 $dir = $dir . '/' . $date;
             }else{
                 $dir = $base_name;
